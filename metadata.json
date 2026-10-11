@@ -1,0 +1,6 @@
+{
+  "name": "RetailIQ: Portfolio Analytics Product",
+  "description": "Production-grade retail analytics platform transforming UCI Online Retail II transactions into cohort retention heatmaps, RFM segmentation, forecasting, SQL models, Power BI specs, and interview defense guides.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

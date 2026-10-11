@@ -1,0 +1,104 @@
+// ============================================================================
+// RetailIQ: Production DAX Measure Library
+// Copy and paste into Power BI Model View under dedicated _Measures table
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// 1. Core Financial Measures
+// ----------------------------------------------------------------------------
+
+[Gross Revenue] = 
+CALCULATE(
+    SUM(fact_sales[gross_amount]),
+    fact_sales[is_cancellation] = FALSE
+)
+
+[Net Revenue] = 
+SUM(fact_sales[net_amount])
+
+[Refund Amount] = 
+CALCULATE(
+    ABS(SUM(fact_sales[net_amount])),
+    fact_sales[is_cancellation] = TRUE
+)
+
+[Estimated Gross Margin] = 
+SUM(fact_sales[gross_margin_proxy])
+
+[Estimated Margin %] = 
+DIVIDE([Estimated Gross Margin], [Net Revenue], 0)
+
+[Total Orders] = 
+DISTINCTCOUNT(fact_sales[invoice_no])
+
+[Average Order Value] = 
+DIVIDE([Gross Revenue], [Total Orders], 0)
+
+// ----------------------------------------------------------------------------
+// 2. Volume & Quality Measures
+// ----------------------------------------------------------------------------
+
+[Gross Units Sold] = 
+CALCULATE(
+    SUM(fact_sales[quantity]),
+    fact_sales[is_cancellation] = FALSE
+)
+
+[Returned Units] = 
+CALCULATE(
+    ABS(SUM(fact_sales[quantity])),
+    fact_sales[is_cancellation] = TRUE
+)
+
+[Return Rate %] = 
+DIVIDE(
+    [Returned Units],
+    [Gross Units Sold] + [Returned Units],
+    0
+)
+
+// ----------------------------------------------------------------------------
+// 3. Customer & Cohort Measures
+// ----------------------------------------------------------------------------
+
+[Active Registered Customers] = 
+CALCULATE(
+    DISTINCTCOUNT(fact_sales[customer_key]),
+    fact_sales[customer_key] <> -1,
+    fact_sales[is_cancellation] = FALSE
+)
+
+[Repeat Customers] = 
+COUNTROWS(
+    FILTER(
+        VALUES(dim_customer[customer_key]),
+        [Total Orders] >= 2 && dim_customer[customer_key] <> -1
+    )
+)
+
+[Repeat Purchase Rate %] = 
+DIVIDE([Repeat Customers], [Active Registered Customers], 0)
+
+// ----------------------------------------------------------------------------
+// 4. Time Intelligence & Variance
+// ----------------------------------------------------------------------------
+
+[Net Revenue YoY Growth %] = 
+VAR CurrentRevenue = [Net Revenue]
+VAR PriorYearRevenue = 
+    CALCULATE(
+        [Net Revenue],
+        SAMEPERIODLASTYEAR(dim_date[calendar_date])
+    )
+RETURN
+    DIVIDE(CurrentRevenue - PriorYearRevenue, PriorYearRevenue, 0)
+
+[Net Revenue MoM Growth %] = 
+VAR CurrentRevenue = [Net Revenue]
+VAR PriorMonthRevenue = 
+    CALCULATE(
+        [Net Revenue],
+        DATEADD(dim_date[calendar_date], -1, MONTH)
+    )
+RETURN
+    DIVIDE(CurrentRevenue - PriorMonthRevenue, PriorMonthRevenue, 0)
